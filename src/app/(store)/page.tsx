@@ -115,28 +115,6 @@ export default function HomePage() {
             className="object-cover object-[center_20%]"
           />
           <div className="absolute inset-0 bg-black/[0.03]" />
-          <div className="absolute bottom-4 left-4 w-[calc(100%-2rem)] max-w-[300px] border border-white/70 bg-white/95 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.10)] sm:bottom-6 sm:left-6 sm:p-5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted">
-              {settings.bannerEyebrow}
-            </p>
-            <h1 className="mt-2 font-display text-[clamp(1.4rem,2.2vw,1.9rem)] font-semibold leading-[1.06] tracking-[-0.04em] text-ink">
-              {settings.bannerTitle}{" "}
-              <span className="relative inline-block">
-                <span
-                  aria-hidden="true"
-                  className="absolute bottom-[0.1em] left-0 h-[0.16em] w-full bg-lime"
-                />
-                <span className="relative">{settings.bannerAccent}</span>
-              </span>
-            </h1>
-            <Link
-              href={settings.bannerCtaHref}
-              className="btn btn-lime btn-sm mt-3"
-            >
-              {settings.bannerCtaLabel}
-              <ArrowRight size={13} />
-            </Link>
-          </div>
         </div>
       </section>
 
