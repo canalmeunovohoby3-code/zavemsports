@@ -8,7 +8,7 @@ import {
   statusLabels,
   type OrderStatus,
 } from "@/config/site";
-import { getOrderByToken } from "@/lib/queries";
+import { getStoreOrderByToken } from "@/lib/storefront";
 import { formatCep, formatDateTime, formatPrice } from "@/lib/format";
 import { SHIPPING_NOTICE, SHIPPING_PENDING_LABEL } from "@/lib/shipping";
 import { cn } from "@/lib/cn";
@@ -38,7 +38,7 @@ export default async function OrderPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const order = getOrderByToken(token);
+  const order = await getStoreOrderByToken(token);
   if (!order) notFound();
 
   const isCanceled = order.status === "canceled";

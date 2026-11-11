@@ -126,4 +126,30 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS home_sections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  subtitle TEXT NOT NULL DEFAULT '',
+  image_url TEXT NOT NULL DEFAULT '',
+  source_mode TEXT NOT NULL DEFAULT 'manual'
+    CHECK (source_mode IN ('manual', 'best_sellers', 'new_arrivals', 'category', 'audience')),
+  source_category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+  source_audience TEXT CHECK (source_audience IN ('adulto', 'plus', 'infantil')),
+  is_active INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_home_sections_order ON home_sections(sort_order, id);
+
+CREATE TABLE IF NOT EXISTS home_section_products (
+  section_id INTEGER NOT NULL REFERENCES home_sections(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (section_id, product_id)
+);
+CREATE INDEX IF NOT EXISTS idx_home_section_products_section
+  ON home_section_products(section_id, sort_order, product_id);
 `;

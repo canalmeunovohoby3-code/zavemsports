@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "admin:create": "node scripts/create-admin.mjs",
+    "admin:demo": "node scripts/demo-admin.mjs create",
+    "admin:demo:remove": "node scripts/demo-admin.mjs remove"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "5.3.0",

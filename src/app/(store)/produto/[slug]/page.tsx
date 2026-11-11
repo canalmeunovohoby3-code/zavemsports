@@ -6,7 +6,10 @@ import { ProductGallery } from "@/components/store/product-gallery";
 import { PurchasePanel } from "@/components/store/purchase-panel";
 import { ProductCard } from "@/components/store/product-card";
 import { SectionHeading } from "@/components/store/section-heading";
-import { getProductBySlug, getRelatedProducts } from "@/lib/queries";
+import {
+  getStoreProductBySlug,
+  getStoreRelatedProducts,
+} from "@/lib/storefront";
 import { siteConfig } from "@/config/site";
 import { SHIPPING_NOTICE } from "@/lib/shipping";
 
@@ -20,7 +23,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getStoreProductBySlug(slug);
   if (!product) return { title: "Produto não encontrado" };
 
   return {
@@ -46,10 +49,14 @@ export default async function ProductPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getStoreProductBySlug(slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product.categoryId, product.id, 4);
+  const related = await getStoreRelatedProducts(
+    product.categoryId,
+    product.id,
+    4,
+  );
   const totalStock = product.variants.reduce(
     (total, variant) => total + variant.stock,
     0,

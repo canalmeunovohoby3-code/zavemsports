@@ -121,6 +121,31 @@ export const statusLabels = {
 
 export type OrderStatus = keyof typeof statusLabels;
 
+export const homeSectionModes = {
+  manual: {
+    label: "Seleção manual",
+    hint: "A proprietária escolhe e ordena os produtos exibidos.",
+  },
+  best_sellers: {
+    label: "Mais vendidos (automático)",
+    hint: "Usa os produtos com mais vendas confirmadas. Sem vendas, a vitrine fica vazia.",
+  },
+  new_arrivals: {
+    label: "Novidades (automático)",
+    hint: "Usa os produtos ativos cadastrados mais recentemente.",
+  },
+  category: {
+    label: "Por categoria (automático)",
+    hint: "Usa os produtos ativos da categoria escolhida.",
+  },
+  audience: {
+    label: "Por público (automático)",
+    hint: "Usa os produtos ativos do público escolhido.",
+  },
+} as const;
+
+export type HomeSectionMode = keyof typeof homeSectionModes;
+
 export const paymentMethodLabels = {
   pix: "PIX",
   credit_card: "Cartão de crédito",

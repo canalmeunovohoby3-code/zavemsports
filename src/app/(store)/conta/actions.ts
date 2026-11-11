@@ -1,6 +1,9 @@
 "use server";
 
-import { findOrderForTracking } from "@/lib/queries";
+import {
+  findStoreOrderForTracking,
+  isStoreDemoMode,
+} from "@/lib/storefront";
 import { trackOrderSchema, zodFieldErrors } from "@/lib/validation";
 import type { ActionState } from "@/lib/action-state";
 
@@ -8,6 +11,14 @@ export async function trackOrderAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  if (isStoreDemoMode()) {
+    return {
+      status: "error",
+      message:
+        "A consulta de pedidos está indisponível no modo de demonstração.",
+    };
+  }
+
   const parsed = trackOrderSchema.safeParse({
     orderNumber: String(formData.get("orderNumber") ?? ""),
     email: String(formData.get("email") ?? ""),
@@ -21,7 +32,7 @@ export async function trackOrderAction(
     };
   }
 
-  const order = findOrderForTracking(
+  const order = await findStoreOrderForTracking(
     parsed.data.orderNumber,
     parsed.data.email,
   );

@@ -12,25 +12,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Informe a senha.").max(200),
 });
 
-export const setupSchema = z
-  .object({
-    name: z
-      .string()
-      .trim()
-      .min(3, "Informe seu nome completo.")
-      .max(120, "Nome muito longo."),
-    email: emailSchema,
-    password: z
-      .string()
-      .min(10, "A senha deve ter pelo menos 10 caracteres.")
-      .max(200, "Senha muito longa."),
-    confirmPassword: z.string().min(1, "Confirme a senha."),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "As senhas não coincidem.",
-  });
-
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Informe a senha atual."),
@@ -69,6 +50,36 @@ export const categorySchema = z.object({
     .min(0, "Ordem inválida.")
     .max(9999, "Ordem inválida."),
   isActive: z.boolean().default(true),
+});
+
+export const homeSectionSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(2, "Informe o título da vitrine.")
+    .max(80, "Título muito longo."),
+  subtitle: z
+    .string()
+    .trim()
+    .max(300, "Subtítulo muito longo.")
+    .default(""),
+  imageUrl: z.string().trim().max(1000).default(""),
+  sourceMode: z.enum(
+    ["manual", "best_sellers", "new_arrivals", "category", "audience"],
+    { message: "Selecione um modo de exibição." },
+  ),
+  sourceCategoryId: z.number().int().positive().nullable().default(null),
+  sourceAudience: z
+    .enum(["adulto", "plus", "infantil"])
+    .nullable()
+    .default(null),
+  isActive: z.boolean().default(true),
+  sortOrder: z.coerce
+    .number()
+    .int("Ordem inválida.")
+    .min(0, "Ordem inválida.")
+    .max(9999, "Ordem inválida."),
+  productIds: z.array(z.number().int().positive()).max(24).default([]),
 });
 
 export const variantSchema = z.object({

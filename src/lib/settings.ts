@@ -1,27 +1,15 @@
-import { siteConfig } from "@/config/site";
 import { getDb } from "@/lib/db";
 import {
-  buildWhatsAppLink,
-  isValidWhatsAppNumber,
-  normalizeWhatsAppNumber,
-} from "@/lib/format";
+  defaultStoreSettings,
+  type StoreSettings,
+} from "@/lib/store-settings";
 
-export type StoreSettings = {
-  announcement: string;
-  bannerEyebrow: string;
-  bannerTitle: string;
-  bannerAccent: string;
-  bannerText: string;
-  bannerCtaLabel: string;
-  bannerCtaHref: string;
-  bannerImage: string;
-  bannerImageAlt: string;
-  whatsappDisplay: string;
-  whatsappNumber: string;
-  instagramUrl: string;
-  logoUrl: string;
-  contactEmail: string;
-};
+export type { StoreSettings } from "@/lib/store-settings";
+export {
+  getNormalizedWhatsApp,
+  getWhatsAppHref,
+  isWhatsAppPending,
+} from "@/lib/store-settings";
 
 type SettingRow = { key: string; value: string };
 
@@ -46,22 +34,7 @@ const reverseKeyMap = Object.fromEntries(
   Object.entries(keyMap).map(([dbKey, settingKey]) => [settingKey, dbKey]),
 ) as Record<keyof StoreSettings, string>;
 
-const fallbacks: StoreSettings = {
-  announcement: siteConfig.defaultSettings.announcement,
-  bannerEyebrow: siteConfig.defaultSettings.banner_eyebrow,
-  bannerTitle: siteConfig.defaultSettings.banner_title,
-  bannerAccent: siteConfig.defaultSettings.banner_accent,
-  bannerText: siteConfig.defaultSettings.banner_text,
-  bannerCtaLabel: siteConfig.defaultSettings.banner_cta_label,
-  bannerCtaHref: siteConfig.defaultSettings.banner_cta_href,
-  bannerImage: siteConfig.defaultSettings.banner_image,
-  bannerImageAlt: siteConfig.defaultSettings.banner_image_alt,
-  whatsappDisplay: siteConfig.defaultSettings.whatsapp_display,
-  whatsappNumber: siteConfig.defaultSettings.whatsapp_number,
-  instagramUrl: siteConfig.defaultSettings.instagram_url,
-  logoUrl: siteConfig.defaultSettings.logo_url,
-  contactEmail: siteConfig.defaultSettings.contact_email,
-};
+const fallbacks: StoreSettings = defaultStoreSettings;
 
 export function getSettings(): StoreSettings {
   const rows = getDb()
@@ -76,18 +49,6 @@ export function getSettings(): StoreSettings {
   }
 
   return settings;
-}
-
-export function getWhatsAppHref(settings: StoreSettings, message?: string) {
-  return buildWhatsAppLink(settings.whatsappNumber, message);
-}
-
-export function isWhatsAppPending(settings: StoreSettings) {
-  return !isValidWhatsAppNumber(settings.whatsappNumber);
-}
-
-export function getNormalizedWhatsApp(settings: StoreSettings) {
-  return normalizeWhatsAppNumber(settings.whatsappNumber);
 }
 
 export function updateSettings(values: Partial<StoreSettings>) {

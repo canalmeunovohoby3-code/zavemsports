@@ -4,6 +4,7 @@ import type {
   Category,
   CustomerSummary,
   DashboardStats,
+  HomeSection,
   OrderDetail,
   OrderItem,
   ProductDetail,
@@ -124,7 +125,7 @@ export function getCategoryById(id: number) {
 }
 
 function uniqueSlug(
-  table: "products" | "categories",
+  table: "products" | "categories" | "home_sections",
   desired: string,
   excludeId?: number,
 ) {
@@ -959,6 +960,269 @@ export function getProductVariants(productId: number): ProductVariant[] {
        FROM product_variants WHERE product_id = ? ORDER BY sort_order, id`,
     )
     .all(productId) as VariantRow[];
+}
+
+type HomeSectionRow = {
+  id: number;
+  slug: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  sourceMode: HomeSection["sourceMode"];
+  sourceCategoryId: number | null;
+  sourceCategorySlug: string | null;
+  sourceAudience: HomeSection["sourceAudience"];
+  isActive: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const homeSectionSelect = `
+  SELECT
+    h.id,
+    h.slug,
+    h.title,
+    h.subtitle,
+    h.image_url AS imageUrl,
+    h.source_mode AS sourceMode,
+    h.source_category_id AS sourceCategoryId,
+    c.slug AS sourceCategorySlug,
+    h.source_audience AS sourceAudience,
+    h.is_active AS isActive,
+    h.sort_order AS sortOrder,
+    h.created_at AS createdAt,
+    h.updated_at AS updatedAt
+  FROM home_sections h
+  LEFT JOIN categories c ON c.id = h.source_category_id
+`;
+
+export type HomeSectionInput = {
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  sourceMode: HomeSection["sourceMode"];
+  sourceCategoryId: number | null;
+  sourceAudience: HomeSection["sourceAudience"];
+  isActive: boolean;
+  sortOrder: number;
+  productIds: number[];
+};
+
+function getHomeSectionProductIds(sectionId: number) {
+  return (
+    getDb()
+      .prepare(
+        `SELECT product_id AS productId
+         FROM home_section_products
+         WHERE section_id = ?
+         ORDER BY sort_order, product_id`,
+      )
+      .all(sectionId) as Array<{ productId: number }>
+  ).map((row) => Number(row.productId));
+}
+
+function mapHomeSection(
+  row: HomeSectionRow,
+  products: ProductSummary[] = [],
+): HomeSection {
+  const productIds = getHomeSectionProductIds(row.id);
+  return {
+    ...row,
+    isActive: Boolean(row.isActive),
+    sortOrder: Number(row.sortOrder),
+    sourceCategoryId:
+      row.sourceCategoryId == null ? null : Number(row.sourceCategoryId),
+    productIds,
+    products,
+  };
+}
+
+export function listHomeSections(options?: { includeInactive?: boolean }) {
+  const where = options?.includeInactive ? "" : "WHERE h.is_active = 1";
+  const rows = getDb()
+    .prepare(
+      `${homeSectionSelect} ${where} ORDER BY h.sort_order, h.id`,
+    )
+    .all() as HomeSectionRow[];
+  return rows.map((row) => mapHomeSection(row));
+}
+
+export function getHomeSectionById(id: number) {
+  const row = getDb()
+    .prepare(`${homeSectionSelect} WHERE h.id = ?`)
+    .get(id) as HomeSectionRow | undefined;
+  return row ? mapHomeSection(row) : null;
+}
+
+export function getNextHomeSectionSortOrder() {
+  const row = getDb()
+    .prepare(
+      "SELECT COALESCE(MAX(sort_order), 0) AS maxOrder FROM home_sections",
+    )
+    .get() as { maxOrder: number };
+  return Number(row.maxOrder) + 1;
+}
+
+function saveHomeSectionProducts(sectionId: number, productIds: number[]) {
+  const db = getDb();
+  db.prepare("DELETE FROM home_section_products WHERE section_id = ?").run(
+    sectionId,
+  );
+  const insert = db.prepare(
+    "INSERT INTO home_section_products (section_id, product_id, sort_order) VALUES (?, ?, ?)",
+  );
+  productIds.forEach((productId, index) => {
+    insert.run(sectionId, productId, index);
+  });
+}
+
+export function createHomeSection(input: HomeSectionInput) {
+  const db = getDb();
+  const now = new Date().toISOString();
+  const slug = uniqueSlug("home_sections", input.title);
+
+  const run = db.transaction(() => {
+    const result = db
+      .prepare(
+        `INSERT INTO home_sections
+          (slug, title, subtitle, image_url, source_mode, source_category_id,
+           source_audience, is_active, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        slug,
+        input.title,
+        input.subtitle,
+        input.imageUrl,
+        input.sourceMode,
+        input.sourceCategoryId,
+        input.sourceAudience,
+        input.isActive ? 1 : 0,
+        input.sortOrder,
+        now,
+        now,
+      );
+    const id = Number(result.lastInsertRowid);
+    saveHomeSectionProducts(id, input.productIds);
+    return id;
+  });
+
+  return run();
+}
+
+export function updateHomeSection(id: number, input: HomeSectionInput) {
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  const run = db.transaction(() => {
+    db.prepare(
+      `UPDATE home_sections SET
+        title = ?, subtitle = ?, image_url = ?, source_mode = ?,
+        source_category_id = ?, source_audience = ?, is_active = ?,
+        sort_order = ?, updated_at = ?
+       WHERE id = ?`,
+    ).run(
+      input.title,
+      input.subtitle,
+      input.imageUrl,
+      input.sourceMode,
+      input.sourceCategoryId,
+      input.sourceAudience,
+      input.isActive ? 1 : 0,
+      input.sortOrder,
+      now,
+      id,
+    );
+    saveHomeSectionProducts(id, input.productIds);
+  });
+
+  run();
+}
+
+export function deleteHomeSection(id: number) {
+  const db = getDb();
+  const run = db.transaction(() => {
+    db.prepare("DELETE FROM home_sections WHERE id = ?").run(id);
+    const remaining = db
+      .prepare("SELECT id FROM home_sections ORDER BY sort_order, id")
+      .all() as Array<{ id: number }>;
+    const update = db.prepare(
+      "UPDATE home_sections SET sort_order = ?, updated_at = ? WHERE id = ?",
+    );
+    const now = new Date().toISOString();
+    remaining.forEach((row, index) => {
+      update.run(index + 1, now, Number(row.id));
+    });
+  });
+  run();
+}
+
+export function moveHomeSection(id: number, direction: "up" | "down") {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT id FROM home_sections ORDER BY sort_order, id")
+    .all() as Array<{ id: number }>;
+  const index = rows.findIndex((row) => Number(row.id) === id);
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+  if (index < 0 || targetIndex < 0 || targetIndex >= rows.length) {
+    return { ok: false as const, error: "Vitrine não encontrada na ordem." };
+  }
+
+  const run = db.transaction(() => {
+    const ids = rows.map((row) => Number(row.id));
+    [ids[index], ids[targetIndex]] = [ids[targetIndex], ids[index]];
+    const update = db.prepare(
+      "UPDATE home_sections SET sort_order = ?, updated_at = ? WHERE id = ?",
+    );
+    const now = new Date().toISOString();
+    ids.forEach((sectionId, position) => {
+      update.run(position + 1, now, sectionId);
+    });
+  });
+
+  run();
+  return { ok: true as const };
+}
+
+export function listHomeSectionsForHome() {
+  const sections = listHomeSections();
+
+  return sections.map((section) => {
+    let products: ProductSummary[] = [];
+
+    if (section.sourceMode === "manual") {
+      if (section.productIds.length > 0) {
+        const rows = getDb()
+          .prepare(
+            `${productSelect}
+             JOIN home_section_products hsp ON hsp.product_id = p.id
+             WHERE hsp.section_id = ? AND p.is_active = 1 AND c.is_active = 1
+             ORDER BY hsp.sort_order, hsp.product_id
+             LIMIT 24`,
+          )
+          .all(section.id) as ProductRow[];
+        products = rows.map(mapProduct);
+      }
+    } else if (section.sourceMode === "category" && section.sourceCategoryId) {
+      products = listProducts({
+        categoryId: section.sourceCategoryId,
+        limit: 4,
+      });
+    } else if (section.sourceMode === "audience" && section.sourceAudience) {
+      products = listProducts({
+        audience: section.sourceAudience,
+        limit: 4,
+      });
+    } else if (section.sourceMode === "best_sellers") {
+      products = listBestSellers(4).products;
+    } else if (section.sourceMode === "new_arrivals") {
+      products = listProducts({ limit: 4 });
+    }
+
+    return { ...section, products };
+  });
 }
 
 export function countUsers() {

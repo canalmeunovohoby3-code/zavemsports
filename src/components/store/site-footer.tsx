@@ -7,8 +7,11 @@ import {
   PackageCheck,
 } from "lucide-react";
 import type { Category } from "@/lib/types";
-import type { StoreSettings } from "@/lib/settings";
-import { getWhatsAppHref, isWhatsAppPending } from "@/lib/settings";
+import type { StoreSettings } from "@/lib/store-settings";
+import {
+  getWhatsAppHref,
+  isWhatsAppPending,
+} from "@/lib/store-settings";
 
 type SiteFooterProps = {
   categories: Category[];

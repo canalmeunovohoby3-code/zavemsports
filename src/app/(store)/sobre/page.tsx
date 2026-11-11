@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { listCategories } from "@/lib/queries";
+import { getStoreCategories } from "@/lib/storefront";
 import { audienceLabels } from "@/config/site";
 import { editorial } from "@/config/editorial";
 
@@ -11,8 +11,8 @@ export const metadata = {
     "A ZEVEN SPORTS reúne camisetas de algodão, bermudas, tamanhos especiais e linha infantil.",
 };
 
-export default function AboutPage() {
-  const categories = listCategories();
+export default async function AboutPage() {
+  const categories = await getStoreCategories();
 
   return (
     <div className="bg-white">

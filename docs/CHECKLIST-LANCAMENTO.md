@@ -18,7 +18,7 @@
 
 ## Cadastro
 
-- [ ] Criar o administrador em `/admin/setup` imediatamente após o deploy.
+- [ ] Criar o primeiro administrador com `npm run admin:create` no servidor, antes de liberar o painel.
 - [ ] Enviar a logo em `/admin/configuracoes`.
 - [ ] Enviar o banner, se aplicável, e revisar o texto de apoio.
 - [ ] Confirmar o número de WhatsApp e o link de atendimento.

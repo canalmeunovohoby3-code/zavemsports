@@ -2,7 +2,11 @@ import Link from "next/link";
 import { ArrowUpRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/store/product-card";
 import { audienceLabels, type Audience, type CategoryKind } from "@/config/site";
-import { listAvailableSizes, listCategories, listProducts } from "@/lib/queries";
+import {
+  getStoreAvailableSizes,
+  getStoreCategories,
+  getStoreProducts,
+} from "@/lib/storefront";
 import { cn } from "@/lib/cn";
 
 export const metadata = {
@@ -56,9 +60,9 @@ export default async function CatalogPage({
           ? "name"
           : "recent";
 
-  const categories = listCategories();
-  const availableSizes = listAvailableSizes();
-  const products = listProducts({
+  const categories = await getStoreCategories();
+  const availableSizes = await getStoreAvailableSizes();
+  const products = await getStoreProducts({
     audience,
     kind,
     query: query || undefined,

@@ -29,10 +29,11 @@ Acesse `http://localhost:3000`.
 
 Na primeira execução:
 
-1. Acesse `/admin/setup`.
-2. Crie o usuário administrador (nome, e-mail e senha de pelo menos 10 caracteres).
+1. No terminal do projeto, execute `npm run admin:create` e informe nome, e-mail e senha (mínimo de 10 caracteres). Não existe cadastro administrativo público.
+2. Acesse `/admin/login` com o acesso criado.
 3. Cadastre os produtos, imagens, preços e a grade de tamanhos.
 4. Configure logo, banner, WhatsApp e Instagram em `/admin/configuracoes`.
+5. Monte as seções da home em `/admin/vitrines`.
 
 O banco e as pastas de dados são criados automaticamente na primeira requisição.
 
@@ -44,6 +45,7 @@ npm run build      # build de produção
 npm start          # servidor de produção
 npm run lint       # ESLint
 npm run typecheck  # TypeScript
+npm run admin:create # cria o primeiro administrador (executar uma única vez)
 ```
 
 ## Arquitetura
@@ -119,12 +121,40 @@ Rotas protegidas:
 - `/admin` — visão geral, pendências, pedidos recentes e estoque baixo
 - `/admin/produtos` — catálogo, imagens, preço, destaque e status
 - `/admin/categorias` — organização de linhas e tipos
+- `/admin/vitrines` — vitrines e seções da página inicial, com produtos e ordem próprios
 - `/admin/pedidos` — pedidos, status e restauração de estoque no cancelamento
 - `/admin/clientes` — dados de contato e pedidos
 - `/admin/configuracoes` — banner, logo, WhatsApp, Instagram e anúncio
 - `/admin/conta` — troca de senha (encerra todas as sessões)
 
-A sessão usa cookie `httpOnly`, `SameSite=Lax` e expira em 7 dias. O primeiro administrador é criado apenas uma vez em `/admin/setup`.
+A sessão usa cookie `httpOnly`, `SameSite=Lax` e expira em 7 dias. O primeiro administrador é criado apenas pelo comando `npm run admin:create`, no servidor. A rota pública de setup foi removida; o login e a sessão exigem `role = admin` no banco.
+
+## Vitrines da página inicial
+
+- Gerenciadas em `/admin/vitrines`.
+- Cada vitrine tem título, subtítulo, imagem opcional, status, ordem, modo de seleção e produtos próprios.
+- Modos disponíveis: seleção manual, mais vendidos, novidades, por categoria e por público.
+- A seleção manual permite adicionar, remover e reordenar produtos sem alterar o catálogo.
+- A home exibe apenas vitrines ativas, na ordem definida, e apenas produtos ativos.
+- As seis vitrines iniciais são criadas uma única vez, sem duplicação, quando a tabela está vazia.
+
+## Acesso temporário de demonstração (somente desenvolvimento)
+
+Para apresentar o painel sem criar o acesso definitivo da proprietária:
+
+```bash
+npm run admin:demo
+```
+
+O comando cria ou rotaciona o usuário `demo@zeven.local`, gera uma senha aleatória, grava apenas o hash bcrypt e exibe a senha uma única vez no terminal. A sessão dura até 8 horas.
+
+- Funciona somente com `NODE_ENV=development`.
+- É bloqueado em produção mesmo que o usuário exista no banco.
+- Não reabre `/admin/setup`.
+- Para encerrar e apagar as sessões: `npm run admin:demo:remove`.
+- Nenhuma senha fixa é gravada no código ou no repositório.
+
+Antes de criar o acesso definitivo com `npm run admin:create`, remova o acesso de demonstração.
 
 ## Uploads
 
@@ -143,6 +173,7 @@ Arquivo padrão: `data/zeven.db` (SQLite, WAL). As tabelas são criadas de forma
 - `customers`
 - `orders`, `order_items`
 - `settings`
+- `home_sections`, `home_section_products`
 
 Para reiniciar o ambiente de desenvolvimento, pare o servidor e remova a pasta `data/` (isso apaga catálogo, pedidos e uploads). **Nunca faça isso em produção sem backup.**
 
@@ -157,7 +188,9 @@ Para reiniciar o ambiente de desenvolvimento, pare o servidor e remova a pasta `
 - JSON-LD é escapado para evitar injeção via conteúdo administrativo.
 - Cabeçalhos `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy`.
 - Cookie de sessão fica `secure` em produção. Use HTTPS.
-- **Conclua o `/admin/setup` imediatamente após o primeiro deploy** para evitar que outra pessoa crie o administrador.
+- **Crie o administrador via CLI** (`npm run admin:create`) antes de liberar o painel. Não existe rota pública de cadastro administrativo.
+- O papel `role` é verificado no login e na validação de cada sessão; somente usuários `admin` acessam o painel.
+- No modo demonstração da Vercel, todas as rotas administrativas e `/api/admin/*` são bloqueadas antes de qualquer acesso ao banco.
 
 ## Deploy e operação
 
@@ -174,6 +207,27 @@ npm start
 - Faça backup periódico de `data/zeven.db` e `data/uploads`.
 - **Não use Vercel/serverless** com SQLite e uploads locais: o sistema de arquivos não é persistente. Se for necessário serverless, migre o banco para Postgres e os uploads para storage externo.
 - Configure um gateway de pagamento apenas depois de credenciais reais e revisão do fluxo.
+
+### Demonstração pública na Vercel (sem SQLite)
+
+Para publicar a loja apenas para apresentação, sem banco persistente:
+
+1. Configure na Vercel:
+   - `STORE_DEMO_MODE=true`
+   - `NEXT_PUBLIC_SITE_URL=https://seu-endereco.vercel.app`
+2. Não configure `DATABASE_PATH` nem `UPLOAD_DIR` para essa demonstração.
+3. Faça o deploy normalmente.
+
+No modo demo:
+
+- A loja pública usa dados versionados em `src/lib/demo-data.ts`.
+- São carregadas as seis categorias e as seis vitrines, sem produtos.
+- Nenhuma consulta, migração ou criação de arquivo SQLite é executada.
+- Nenhum upload local é necessário; todas as imagens usadas estão em `public/`.
+- `/admin`, `/admin/login` e `/api/admin/*` ficam bloqueados com uma mensagem própria.
+- Checkout e consulta de pedidos ficam indisponíveis.
+
+Para desativar, remova `STORE_DEMO_MODE` ou defina `STORE_DEMO_DISABLE=true` e faça novo deploy. **Nunca deixe o modo demo ativo na produção definitiva.**
 
 ## O que ainda depende da cliente
 

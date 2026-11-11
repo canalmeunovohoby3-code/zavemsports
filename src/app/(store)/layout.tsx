@@ -2,16 +2,15 @@ import { CartProvider } from "@/components/store/cart-provider";
 import { CartDrawer } from "@/components/store/cart-drawer";
 import { SiteHeader } from "@/components/store/site-header";
 import { SiteFooter } from "@/components/store/site-footer";
-import { listCategories } from "@/lib/queries";
-import { getSettings } from "@/lib/settings";
+import { getStoreCategories, getStoreSettings } from "@/lib/storefront";
 
 export const dynamic = "force-dynamic";
 
-export default function StoreLayout({
+export default async function StoreLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const settings = getSettings();
-  const categories = listCategories();
+  const settings = await getStoreSettings();
+  const categories = await getStoreCategories();
 
   return (
     <CartProvider>

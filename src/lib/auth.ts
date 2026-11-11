@@ -7,11 +7,15 @@ import { countUsers } from "@/lib/queries";
 
 export const SESSION_COOKIE = "zeven_admin_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
+export const DEMO_SESSION_DURATION_MS = 1000 * 60 * 60 * 8;
+
+export type AdminRole = "admin" | "demo_admin";
 
 export type AdminUser = {
   id: number;
   name: string;
   email: string;
+  role: AdminRole;
 };
 
 type UserRow = {
@@ -19,27 +23,41 @@ type UserRow = {
   name: string;
   email: string;
   password_hash: string;
+  role: string;
 };
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function cookieOptions() {
+export function isDemoAccessAllowed() {
+  return process.env.NODE_ENV === "development";
+}
+
+function resolveAdminRole(role: string): AdminRole | null {
+  if (role === "admin") return "admin";
+  if (role === "demo_admin" && isDemoAccessAllowed()) return "demo_admin";
+  return null;
+}
+
+function cookieOptions(maxAgeMs: number) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: SESSION_DURATION_MS / 1000,
+    maxAge: maxAgeMs / 1000,
   };
 }
 
-export async function createSession(userId: number) {
+export async function createSession(
+  userId: number,
+  durationMs = SESSION_DURATION_MS,
+) {
   const db = getDb();
   const token = randomBytes(32).toString("hex");
   const tokenHash = hashToken(token);
-  const expiresAt = Date.now() + SESSION_DURATION_MS;
+  const expiresAt = Date.now() + durationMs;
 
   db.prepare(
     "DELETE FROM admin_sessions WHERE expires_at <= ?",
@@ -49,7 +67,7 @@ export async function createSession(userId: number) {
   ).run(tokenHash, userId, expiresAt, new Date().toISOString());
 
   const store = await cookies();
-  store.set(SESSION_COOKIE, token, cookieOptions());
+  store.set(SESSION_COOKIE, token, cookieOptions(durationMs));
 }
 
 export async function destroySession() {
@@ -70,13 +88,19 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
 
   const row = getDb()
     .prepare(
-      `SELECT u.id, u.name, u.email, s.expires_at AS expiresAt
+      `SELECT u.id, u.name, u.email, u.role, s.expires_at AS expiresAt
        FROM admin_sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.token_hash = ?`,
     )
     .get(hashToken(token)) as
-    | (AdminUser & { expiresAt: number })
+    | {
+        id: number;
+        name: string;
+        email: string;
+        role: string;
+        expiresAt: number;
+      }
     | undefined;
 
   if (!row) return null;
@@ -88,7 +112,17 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
     return null;
   }
 
-  return { id: row.id, name: row.name, email: row.email };
+  const role = resolveAdminRole(row.role);
+  if (!role) {
+    if (row.role === "demo_admin") {
+      getDb()
+        .prepare("DELETE FROM admin_sessions WHERE token_hash = ?")
+        .run(hashToken(token));
+    }
+    return null;
+  }
+
+  return { id: row.id, name: row.name, email: row.email, role };
 }
 
 export async function requireAdmin() {
@@ -109,41 +143,21 @@ export async function hasAdminUser() {
 export async function verifyCredentials(email: string, password: string) {
   const user = getDb()
     .prepare(
-      "SELECT id, name, email, password_hash FROM users WHERE email = ? COLLATE NOCASE",
+      "SELECT id, name, email, password_hash, role FROM users WHERE email = ? COLLATE NOCASE",
     )
     .get(email) as UserRow | undefined;
 
   if (!user) return null;
+  const role = resolveAdminRole(user.role);
+  if (!role) return null;
   const valid = await compare(password, user.password_hash);
   if (!valid) return null;
-  return { id: user.id, name: user.name, email: user.email } satisfies AdminUser;
-}
-
-export async function createFirstAdmin(input: {
-  name: string;
-  email: string;
-  password: string;
-}) {
-  const db = getDb();
-  const now = new Date().toISOString();
-  const passwordHash = await hash(input.password, 12);
-
-  const run = db.transaction(() => {
-    const count = db
-      .prepare("SELECT COUNT(*) AS count FROM users")
-      .get() as { count: number };
-    if (Number(count.count) > 0) {
-      return null;
-    }
-    const result = db
-      .prepare(
-        "INSERT INTO users (name, email, password_hash, role, created_at) VALUES (?, ?, ?, 'admin', ?)",
-      )
-      .run(input.name, input.email, passwordHash, now);
-    return Number(result.lastInsertRowid);
-  });
-
-  return run();
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role,
+  } satisfies AdminUser;
 }
 
 export async function changeAdminPassword(

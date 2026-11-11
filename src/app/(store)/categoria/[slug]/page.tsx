@@ -7,11 +7,11 @@ import { ProductCard } from "@/components/store/product-card";
 import { audienceLabels } from "@/config/site";
 import { getCategoryImage } from "@/config/editorial";
 import {
-  getCategoryBySlug,
-  listAvailableSizesByCategory,
-  listCategories,
-  listProducts,
-} from "@/lib/queries";
+  getStoreAvailableSizesByCategory,
+  getStoreCategories,
+  getStoreCategoryBySlug,
+  getStoreProducts,
+} from "@/lib/storefront";
 import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getStoreCategoryBySlug(slug);
   if (!category) return { title: "Categoria não encontrada" };
   return {
     title: category.name,
@@ -45,7 +45,7 @@ export default async function CategoryPage({
 }) {
   const { slug } = await params;
   const raw = await searchParams;
-  const category = getCategoryBySlug(slug);
+  const category = await getStoreCategoryBySlug(slug);
   if (!category) notFound();
 
   const size = first(raw.tamanho)?.trim() ?? "";
@@ -59,9 +59,9 @@ export default async function CategoryPage({
           ? "name"
           : "recent";
 
-  const allCategories = listCategories();
-  const availableSizes = listAvailableSizesByCategory(category.id);
-  const products = listProducts({
+  const allCategories = await getStoreCategories();
+  const availableSizes = await getStoreAvailableSizesByCategory(category.id);
+  const products = await getStoreProducts({
     categoryId: category.id,
     size: size || undefined,
     sort,

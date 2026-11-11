@@ -1,6 +1,7 @@
 import type {
   Audience,
   CategoryKind,
+  HomeSectionMode,
   OrderStatus,
   PaymentMethod,
 } from "@/config/site";
@@ -120,6 +121,24 @@ export type AdminProduct = ProductSummary & {
   details: string;
   images: ProductImage[];
   variants: ProductVariant[];
+};
+
+export type HomeSection = {
+  id: number;
+  slug: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  sourceMode: HomeSectionMode;
+  sourceCategoryId: number | null;
+  sourceCategorySlug: string | null;
+  sourceAudience: Audience | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  productIds: number[];
+  products: ProductSummary[];
 };
 
 export type DashboardStats = {

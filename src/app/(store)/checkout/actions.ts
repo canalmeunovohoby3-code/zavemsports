@@ -1,6 +1,6 @@
 "use server";
 
-import { OrderError, placeOrder } from "@/lib/orders";
+import { isStoreDemoMode } from "@/lib/storefront";
 import { onlyDigits } from "@/lib/format";
 import {
   checkoutSchema,
@@ -13,6 +13,14 @@ export async function placeOrderAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  if (isStoreDemoMode()) {
+    return {
+      status: "error",
+      message:
+        "O checkout está desativado no modo de demonstração. A loja está apenas apresentando o catálogo.",
+    };
+  }
+
   const accepted = formData.get("accepted") === "on";
   if (!accepted) {
     return {
@@ -85,6 +93,8 @@ export async function placeOrderAction(
       message: "Valor do pedido inválido. Revise a sacola.",
     };
   }
+
+  const { OrderError, placeOrder } = await import("@/lib/orders");
 
   try {
     const order = placeOrder({

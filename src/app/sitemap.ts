@@ -1,10 +1,13 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
-import { listCategories, listProducts } from "@/lib/queries";
+import {
+  getStoreCategories,
+  getStoreProducts,
+} from "@/lib/storefront";
 
 export const dynamic = "force-dynamic";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url.replace(/\/$/, "");
   const now = new Date();
 
@@ -20,14 +23,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === "" ? 1 : 0.7,
   }));
 
-  const categories = listCategories().map((category) => ({
+  const categories = (await getStoreCategories()).map((category) => ({
     url: `${base}/categoria/${category.slug}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.7,
   }));
 
-  const products = listProducts({ limit: 500 }).map((product) => ({
+  const products = (await getStoreProducts({ limit: 500 })).map((product) => ({
     url: `${base}/produto/${product.slug}`,
     lastModified: new Date(product.createdAt),
     changeFrequency: "weekly" as const,
