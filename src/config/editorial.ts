@@ -1,5 +1,5 @@
 export const editorial = {
-  heroBanner: "/editorial/hero-banner.webp",
+  heroBanner: "/bannerprincipal.png",
   institutional: "/editorial/institutional.webp",
   categoryFallbacks: {
     "camisetas-adulto": "/editorial/category-adulto.webp",

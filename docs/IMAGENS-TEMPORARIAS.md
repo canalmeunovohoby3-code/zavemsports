@@ -6,7 +6,7 @@ Arquivos em `public/editorial/`:
 
 | Arquivo | Uso | Origem |
 | --- | --- | --- |
-| `hero-banner.webp` | Banner principal (horizontal) | Pexels, foto 9775889 |
+| `bannerprincipal.png` | Banner principal (horizontal, 2172×724) | Arte oficial fornecida pela loja |
 | `category-adulto.webp` | Categoria Adulto | Pexels, foto 19538064 |
 | `category-plus.webp` | Categoria Plus Size | Pexels, foto 9164777 |
 | `category-infantil.webp` | Categoria Infantil | Pexels, foto 6261878 |

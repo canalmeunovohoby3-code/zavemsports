@@ -107,7 +107,7 @@ export default function HomePage() {
             src={settings.bannerImage || editorial.heroBanner}
             alt={
               settings.bannerImageAlt ||
-              "Modelos vestindo camisetas básicas ZEVEN SPORTS"
+              "Campanha ZEVEN SPORTS com modelos vestindo camisetas e bermudas"
             }
             fill
             priority
@@ -115,7 +115,7 @@ export default function HomePage() {
             className="object-cover object-[center_20%]"
           />
           <div className="absolute inset-0 bg-black/[0.03]" />
-          <div className="absolute bottom-4 right-4 w-[calc(100%-2rem)] max-w-[300px] border border-white/70 bg-white/95 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.10)] sm:bottom-6 sm:right-6 sm:p-5">
+          <div className="absolute bottom-4 left-4 w-[calc(100%-2rem)] max-w-[300px] border border-white/70 bg-white/95 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.10)] sm:bottom-6 sm:left-6 sm:p-5">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted">
               {settings.bannerEyebrow}
             </p>
