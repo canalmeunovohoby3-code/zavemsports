@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+﻿import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -17,6 +17,25 @@ import type { ProductSummary } from "@/lib/types";
 
 export default function HomePage() {
   const settings = getSettings();
+  const bannerAlt =
+    settings.bannerImageAlt ||
+    "Campanha ZEVEN SPORTS com modelos vestindo camisetas e bermudas";
+  const bannerDesktop = getImageProps({
+    src: settings.bannerImage || editorial.heroBanner,
+    alt: bannerAlt,
+    width: 2172,
+    height: 724,
+    sizes: "100vw",
+    priority: true,
+  }).props;
+  const bannerMobile = getImageProps({
+    src: editorial.heroBannerMobile,
+    alt: bannerAlt,
+    width: 1448,
+    height: 1086,
+    sizes: "100vw",
+    priority: true,
+  }).props;
   const categories = listCategories();
   const bestSellers = listBestSellers(4);
   const featured = listProducts({ featured: true, limit: 4 });
@@ -102,18 +121,20 @@ export default function HomePage() {
   return (
     <>
       <section className="border-b border-line bg-[#f7f7f5]">
-        <Image
-          src={settings.bannerImage || editorial.heroBanner}
-          alt={
-            settings.bannerImageAlt ||
-            "Campanha ZEVEN SPORTS com modelos vestindo camisetas e bermudas"
-          }
-          width={2172}
-          height={724}
-          priority
-          sizes="100vw"
-          className="block h-auto w-full"
-        />
+        <picture>
+          {settings.bannerImage ? null : (
+            <source
+              media="(max-width: 639px)"
+              srcSet={bannerMobile.srcSet}
+              sizes={bannerMobile.sizes}
+            />
+          )}
+          <img
+            {...bannerDesktop}
+            alt={bannerAlt}
+            className="block h-auto w-full"
+          />
+        </picture>
       </section>
 
       <section className="bg-white">
