@@ -12,13 +12,9 @@ import type {
   ProductDetail,
   ProductSummary,
 } from "@/lib/types";
+import { isStoreDemoMode } from "@/lib/store-mode";
 
-export function isStoreDemoMode() {
-  return (
-    process.env.STORE_DEMO_MODE === "true" &&
-    process.env.STORE_DEMO_DISABLE !== "true"
-  );
-}
+export { isStoreDemoMode } from "@/lib/store-mode";
 
 export async function getStoreSettings() {
   if (isStoreDemoMode()) return { ...demoSettings };

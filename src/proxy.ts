@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-function isDemoMode() {
-  return (
-    process.env.STORE_DEMO_MODE === "true" &&
-    process.env.STORE_DEMO_DISABLE !== "true"
-  );
-}
+import { isStoreDemoMode } from "@/lib/store-mode";
 
 export function proxy(request: NextRequest) {
-  if (!isDemoMode()) return NextResponse.next();
+  if (!isStoreDemoMode()) return NextResponse.next();
 
   if (request.nextUrl.pathname.startsWith("/api/admin")) {
     return NextResponse.json(

@@ -212,11 +212,11 @@ npm start
 
 Para publicar a loja apenas para apresentação, sem banco persistente:
 
-1. Configure na Vercel:
-   - `STORE_DEMO_MODE=true`
-   - `NEXT_PUBLIC_SITE_URL=https://seu-endereco.vercel.app`
+1. Na Vercel, configure apenas `NEXT_PUBLIC_SITE_URL=https://seu-endereco.vercel.app`.
 2. Não configure `DATABASE_PATH` nem `UPLOAD_DIR` para essa demonstração.
-3. Faça o deploy normalmente.
+3. Faça o deploy normalmente. A Vercel define `VERCEL=1` automaticamente, ativando o modo demo sem configuração manual.
+
+Para forçar o modo demo fora da Vercel, use `STORE_DEMO_MODE=true`. Para desativar explicitamente, inclusive na Vercel, use `STORE_DEMO_MODE=false` ou `STORE_DEMO_DISABLE=true`.
 
 No modo demo:
 
@@ -227,7 +227,7 @@ No modo demo:
 - `/admin`, `/admin/login` e `/api/admin/*` ficam bloqueados com uma mensagem própria.
 - Checkout e consulta de pedidos ficam indisponíveis.
 
-Para desativar, remova `STORE_DEMO_MODE` ou defina `STORE_DEMO_DISABLE=true` e faça novo deploy. **Nunca deixe o modo demo ativo na produção definitiva.**
+Para desativar, defina `STORE_DEMO_MODE=false` ou `STORE_DEMO_DISABLE=true` e faça novo deploy. **Nunca desative o modo demo na Vercel enquanto o projeto depender de SQLite local.**
 
 ## O que ainda depende da cliente
 
