@@ -102,20 +102,18 @@ export default function HomePage() {
   return (
     <>
       <section className="border-b border-line bg-[#f7f7f5]">
-        <div className="relative h-[300px] w-full overflow-hidden sm:h-[320px] lg:h-[340px]">
-          <Image
-            src={settings.bannerImage || editorial.heroBanner}
-            alt={
-              settings.bannerImageAlt ||
-              "Campanha ZEVEN SPORTS com modelos vestindo camisetas e bermudas"
-            }
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-[center_20%]"
-          />
-          <div className="absolute inset-0 bg-black/[0.03]" />
-        </div>
+        <Image
+          src={settings.bannerImage || editorial.heroBanner}
+          alt={
+            settings.bannerImageAlt ||
+            "Campanha ZEVEN SPORTS com modelos vestindo camisetas e bermudas"
+          }
+          width={2172}
+          height={724}
+          priority
+          sizes="100vw"
+          className="block h-auto w-full"
+        />
       </section>
 
       <section className="bg-white">
